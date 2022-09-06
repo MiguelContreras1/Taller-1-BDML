@@ -616,6 +616,53 @@ peak_age_mujer2=(base_mujeres$age[23])#43
 as.integer(max(base_mujeres$ingtot))#40.000.000
 
 
+#regresion condicional
+
+base2$maxEducLevel<-as.factor(base2$maxEducLevel)
+base2$estrato1<-as.factor(base2$estrato1)
+base2$regSalud <-as.factor(base2$regSalud)
+base2$cotPension<-as.factor(base2$cotPension)
+base2$sizeFirm<-as.factor(base2$sizeFirm)
+base2$oficio<-as.factor(base2$ofici)
+base2$informal<-as.factor(base2$informal)
+base2$relab<-as.factor(base2$relab)
+
+ingtot2<-base2$ingtot
+ingtot2 <- ifelse((base2$ingtot)==0,1,ingtot2)
+log_ingtot <- log(ingtot2)
+regresion4<- lm(log_ingtot~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+sizeFirm+oficio+hoursWorkActualSecondJob+hoursWorkUsual+informal+relab, data=base2)
+lm_summary4<-summary(regresion4)
+
+lm_summary4
+
+lm_summary4 = as.data.frame(summary(regresion4)$coefficients)
+
+
+
+#FWL
+
+base2<-base2 %>% mutate(res_y_a=lm(log_ingtot~maxEducLevel+age+age2+estrato1+regSalud+cotPension+sizeFirm+oficio+hoursWorkActualSecondJob+hoursWorkUsual+informal+relab,base2)$residuals, #Residuals con ingreso
+                        res_s_a=lm(sex~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+sizeFirm+oficio+hoursWorkActualSecondJob+hoursWorkUsual+informal+relab,base2)$residuals, #Residuals con sexo
+)
+
+regresion5<-lm(res_y_a~res_s_a-1,base2)
+stargazer(regresion4,regresion5,type="text")
+
+#boostrap FWL
+
+set.seed(12345)
+eta.fn<-function(base2,i){
+  coef(lm(res_y_a~res_s_a-1,base2, subset = i))
+}
+replicas<- boot(data = base2, statistic = eta.fn, R = 1000)
+replicas
+
+"Bootstrap Statistics :
+     original       bias    std. error
+t1* 0.1463748 -0.001058031  0.02205606"
+
+
+
 #PUNTO 4 
 #división de muestra
 set.seed(12345) #sets a seed
