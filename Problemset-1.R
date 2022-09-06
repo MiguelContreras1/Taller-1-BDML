@@ -65,7 +65,7 @@ base=subset(base, base$ocu==1) #¿ocu (2mil +) o p6240? con ocu se tienen person
 
 #FIltro de variables 
 base2 <- select(base,college, maxEducLevel, age, estrato1, sex, regSalud, cotPension, ingtot, sizeFirm, microEmpresa, oficio, hoursWorkActualSecondJob, hoursWorkUsual, informal, relab )
-base2=base2[-c(1),]
+
 
 #Caracteristicas persona
 #college
@@ -133,7 +133,8 @@ sum(is.na(base2$maxEducLevel)) #1
 sum(is.na(base2$y_total_m)) #0
 
 #Eliminarlos /reemplazarlos 
-base2 = subset(x = base2, subset = is.na(maxEducLevel)==FALSE) #eliminarlo
+
+base2$maxEducLevel = ifelse(is.na(base2$maxEducLevel)==T,1,base2$maxEducLevel) #reemplazarlos
 base2$regSalud = ifelse(is.na(base2$regSalud)==T,0,base2$regSalud) #reemplazarlos
 base2$hoursWorkActualSecondJob = ifelse(is.na(base2$hoursWorkActualSecondJob)==T,0,base2$hoursWorkActualSecondJob) #reemplazarlos
 
@@ -637,7 +638,10 @@ lm_summary4
 
 lm_summary4 = as.data.frame(summary(regresion4)$coefficients)
 
-
+"Coefficients:
+  Estimate Std. Error  t value Pr(>|t|)    
+(Intercept)               1.270e+01  2.973e-01   42.710  < 2e-16 ***
+  sex                       1.464e-01  2.121e-02    6.900 5.39e-12 ***"
 
 #FWL
 
@@ -647,6 +651,8 @@ base2<-base2 %>% mutate(res_y_a=lm(log_ingtot~maxEducLevel+age+age2+estrato1+reg
 
 regresion5<-lm(res_y_a~res_s_a-1,base2)
 stargazer(regresion4,regresion5,type="text")
+
+"res_s_a   0.146*** "
 
 #boostrap FWL
 
@@ -658,9 +664,8 @@ replicas<- boot(data = base2, statistic = eta.fn, R = 1000)
 replicas
 
 "Bootstrap Statistics :
-     original       bias    std. error
-t1* 0.1463748 -0.001058031  0.02205606"
-
+    original        bias    std. error
+t1* 0.146383 -0.0006302242  0.02128028"
 
 
 #PUNTO 4 
@@ -724,16 +729,26 @@ with(test,mean((log_ingtot-especificacion2)^2)) #3.86366 MSE
 sex_age=base2$sex*base2$age
 
 base2<- cbind(base2, sex_age)
-especificacion2 <-lm(log_ingtot~age+age2+sex+sex_age,data=train)
-test$especificacion2<-predict(especificacion2,newdata = test)
-with(test,mean((log_ingtot-especificacion2)^2)) #3.794644 MSE 
+especificacion3 <-lm(log_ingtot~age+age2+sex+sex_age,data=train)
+test$especificacion3<-predict(especificacion3,newdata = test)
+with(test,mean((log_ingtot-especificacion3)^2)) #3.794644 MSE 
 
 
 
+especificacion4 <-lm(log_ingtot~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+sizeFirm+oficio+hoursWorkActualSecondJob+hoursWorkUsual+informal+relab,data=train)
+test$especificacion4<-predict(especificacion4,newdata = test)
+with(test,mean((log_ingtot-especificacion4)^2)) #MSE 2.945502
 
-especificacion3= b0+b1age+b2age^2+b4female+b5estrato1+b6college+ 
-  b7MaxEduclevel+ b8RegSalud +b9CotPension+b10sizeFirm+b11microempresa+b12oficio+
-  b13hoursWorkActualSecondJob+b14hoursWorkUsual+b15informal+b16relab
+
+
+#female_educ female_ocu female_age female_oficio female_informal con chorrero
+#educ^2 educ_estrato
+# hrstrabajo_educ  hrstrabajo_informal hrstrabajo_oficio hrstrabajo_relab
+#hrstrabajo^2 cotpension_regsalud
+#poly2 (educ_age, regsalud_pension)
+
+
+
 
 especificacion3= b0+b1age+b2age^2+b5estrato1+
   b6college+b7MaxEduclevel+ b8RegSalud +b9CotPension+b10sizeFirm+
@@ -744,6 +759,15 @@ especificacion3= b0+b1age+b2age^2+b5estrato1+
 
 specification1<-lm(price~1,data=train)
 summary(specification1)
+
+
+
+
+
+
+
+
+
 
 
 
@@ -772,6 +796,18 @@ model2
           1.936076  0.0201174  0.8491334
         
         Tuning parameter 'intercept' was held constant at a value of TRUE"
+
+
+
+
+
+
+
+
+
+
+
+
 #Temas pendientes
 
 #como exportar
