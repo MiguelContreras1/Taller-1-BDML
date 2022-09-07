@@ -715,7 +715,7 @@ with(test,mean((log_ingtot-especificacion5)^2))#MSE 1.12227
 especificacion6 <-lm(log_ingtot~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+
                        sizeFirm+oficio+hoursWorkActualSecondJob+informal+
                        relab+ sex:maxEducLevel +sex:age+sex:informal+
-                       hoursWorkUsual: maxEducLevel,data=train)
+                       hoursWorkUsual: maxEducLevel+ hoursWorkUsual,data=train)
 test$especificacion6<-predict(especificacion6,newdata = test)
 with(test,mean((log_ingtot-especificacion6)^2)) #MSE 1.117673
 
@@ -755,7 +755,7 @@ with(test,mean((log_ingtot-especificacion9)^2)) #MSE 2.921648
 
 especificacion6_test<-lm(log_ingtot~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+
                               sizeFirm+oficio+hoursWorkActualSecondJob+informal+
-                              relab+ sex:maxEducLevel +sex:age+sex:informal+
+                              relab+ sex:maxEducLevel +sex:age+sex:informal+hoursWorkUsual+
                               hoursWorkUsual: maxEducLevel,data=test)
 predichos_modelo6<- predict(especificacion6_test)
 plot1<- ggplot(data=test, aes(log_ingtot, predichos_modelo6))+
@@ -765,36 +765,30 @@ plot1<- ggplot(data=test, aes(log_ingtot, predichos_modelo6))+
 
 #Matrices para cálculo de relevancia etadística de cada obs
 sex_age=test$sex*test$age
-sex_edu<-
-ex_informal=as.numeric(test$sex)*as.numeric(test$informal)
-test<-cbind(test,hourWorkUsual2)
+sex_edu<-as.numeric(test$sex)*as.numeric(test$maxEducLevel)
+sex_informal=as.numeric(test$sex)*as.numeric(test$informal)
+hour_educ<-as.numeric(test$hoursWorkUsual)*as.numeric(test$maxEducLevel)
+test<-cbind(test,sex_age,sex_edu,sex_informal,hour_educ)
 
-base3<-select(test,log_ingtot,sex,maxEducLevel, age, age2, estrato1, cotPension,regSalud,
-              oficio,hoursWorkUsual,hoursWorkActualSecondJob,informal,relab,hourWorkUsual2) 
+base3<-select(test,sex,maxEducLevel, age, age2, estrato1, cotPension,regSalud,
+              oficio,hoursWorkUsual,hoursWorkActualSecondJob,informal,relab,
+              sex_age,sex_edu,sex_informal,hour_educ, sizeFirm) 
 
-X_cont<-select(base3,age,age2,hoursWorkUsual,hoursWorkActualSecondJob,hourWorkUsual2)
+X_cont<-select(base3,age,age2,hoursWorkUsual,hoursWorkActualSecondJob,hour_educ,sex,sex_age,
+               sex_edu,sex_informal, informal)
+
 X_cont<-data.matrix(X_cont)
 X_dummies<-matrix(x_dummies)
-X_dummies<-model.matrix(~ base3$sex+ base3$estrato1+base3$cotPension+base3$regSalud+
-                          base3$oficio+base3$relab,base3)
-ex_informal<-data.matrix(ex_informal)
-sex_age<-data.matrix(sex_age)
+X_dummies<-model.matrix(~ estrato1+cotPension+regSalud+oficio+relab,base3)
+X<-cbind(X_dummies,X_cont)
+X[,10]<-ifelse(X[,108]==2,0,X[,108]) #reemplazarlos
+X[,9]<-ifelse(X[,107]==2,0,X[,107]) #reemplazarlos
 
-X<- cbind(X_dummies,X_cont,ex_informal,sex_age)
-names(X)[names(X)=='(V106)']<- 'sex_informal'
-names(X)[names(X)=='(V107)']<- 'sex_age'
+#Revisar que columnas son 0 
+table(base3$oficio)#14, 31, 52, 20, 52, 60, 63,73,76,78,82,96
+table(base3$relab)#8
 
-#Revisar que coumnas son 0 
-table(test$oficio)#14, 31, 52, 20, 52, 60, 63,73,76,78,82,96
-table(test$relab)#8
-table(test$maxEducLevel)
-table(test$cotPension)
-table(test$regSalud)
-table(test$informal)
-table(test$sex)
-table(test$maxEducLevel)
-
-(test$estrato1)
+#Quitar columnas con 0
 X<-X[,-30]#20
 X<-X[,-50]#52
 X<-X[,-57]#60
@@ -807,11 +801,9 @@ X<-X[,-80]#96
 X<-X[,-108]#intercep
 X<-X[,-100]#ingtot
 
-X_edu<-model.matrix(~base3$maxEducLevel)
-X<-cbind(X,X_edu)
 hat_matrix<- X%*%solve(t(X)%*% X)%*% t(X)
 
-
+t(X)%*%X
 
 
 
