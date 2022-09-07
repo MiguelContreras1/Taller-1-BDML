@@ -775,7 +775,20 @@ X_dummies<-model.matrix(~ base3$sex+ base3$estrato1+base3$cotPension+base3$regSa
                           base3$oficio+base3$relab,base3)
 
 X<- cbind(X_dummies,X_cont)
-table X
+#Revisar que coumnas son 0 
+table(test$oficio)#20, 52, 60, 63,73,76,78,82,96
+table(test$relab)#8
+X<-X[,-30]#20
+X<-X[,-50]#52
+X<-X[,-57]#60
+X<-X[,-59]#63
+X<-X[,-61]#73
+X<-X[,-63]#76
+X<-X[,-64]#78
+X<-X[,-67]#82
+X<-X[,-80]#96
+
+
 hat_matrix<- X%*%solve(t(X)%*% X)%*% t(X)
 
 
