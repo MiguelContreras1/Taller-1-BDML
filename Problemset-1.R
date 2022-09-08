@@ -13,7 +13,6 @@ install.packages("matrixStats")
 install.packages("rowSds")
 
 library(rowSds)
-library(dplyr)
 library(matrixStats)
 library(rowSds)
 library(boot)
@@ -628,14 +627,8 @@ base2$oficio<-as.factor(base2$ofici)
 base2$informal<-as.factor(base2$informal)
 base2$relab<-as.factor(base2$relab)
 
-ingtot2<-base2$ingtot
-ingtot2 <- ifelse((base2$ingtot)==0,1,ingtot2)
-log_ingtot <- log(ingtot2)
 regresion4<- lm(log_ingtot~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+sizeFirm+oficio+hoursWorkActualSecondJob+hoursWorkUsual+informal+relab, data=base2)
 lm_summary4<-summary(regresion4)
-
-lm_summary4
-
 lm_summary4 = as.data.frame(summary(regresion4)$coefficients)
 
 "Coefficients:
@@ -678,109 +671,190 @@ base2 <- base2 %>%
 test<-base2[base2$holdout==T,]
 train<-base2[base2$holdout==F,]
 
-
 #Especificaciones 
 
 #1
 especificacion1= lm(ingtot~age+age2, data=train) 
 summary(especificacion1)
+"
+          Coefficients:
+                       Estimate Std. Error t value Pr(>|t|)    
+          (Intercept) -379095.1   203049.9  -1.867   0.0619 .  
+          age           87597.5    10095.4   8.677  < 2e-16 ***
+          age2           -750.9      116.6  -6.438 1.25e-10 ***
+          ---
+          Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+          
+          Residual standard error: 2712000 on 13231 degrees of freedom
+          Multiple R-squared:  0.01663,	Adjusted R-squared:  0.01648 
+          F-statistic: 111.9 on 2 and 13231 DF,  p-value: < 2.2e-16
+"
 test$especificacion1<-predict(especificacion1,newdata = test)
 with(test,mean((ingtot-especificacion1)^2)) #5.766696e+12
 
 #2  
 especificacion2= lm(log_ingtot~sex, data=train) 
 summary(especificacion2)
+"    
+        Residuals:
+             Min       1Q   Median       3Q      Max 
+        -13.9260  -0.2344   0.1594   0.6072   4.3420 
+        
+        Coefficients:
+                    Estimate Std. Error t value Pr(>|t|)    
+        (Intercept) 13.55073    0.02465  549.77   <2e-16 ***
+        sex          0.37523    0.03388   11.07   <2e-16 ***
+        ---
+        Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+        
+        Residual standard error: 1.945 on 13232 degrees of freedom
+        Multiple R-squared:  0.009185,	Adjusted R-squared:  0.00911 
+        F-statistic: 122.7 on 1 and 13232 DF,  p-value: < 2.2e-16"
+
 test$especificacion2<-predict(especificacion2,newdata = test)
 with(test,mean((log_ingtot-especificacion2)^2)) #3.86366 MSE 
 
-#3 
-especificacion3 <-lm(log_ingtot~age+age2+sex+sex:age,data=train)
-test$especificacion3<-predict(especificacion3,newdata = test)
-with(test,mean((log_ingtot-especificacion3)^2)) #3.794644 MSE 
 
-#4
+
+#4 
+#intersecciones 
+sex_age=base2$sex*base2$age
+base2<- cbind(base2, sex_age)
+
+especificacion3 <-lm(log_ingtot~age+age2+sex+sex:age,data=train)
+                test$especificacion3<-predict(especificacion3,newdata = test)
+                with(test,mean((log_ingtot-especificacion3)^2)) #3.794644 MSE 
+                summary(especificacion3)
+                "Residuals:
+                         Min       1Q   Median       3Q      Max 
+                      -14.1634  -0.2506   0.1559   0.6224   4.7516 
+                      
+                      Coefficients:
+                                    Estimate Std. Error t value Pr(>|t|)    
+                      (Intercept)  1.226e+01  1.539e-01  79.656  < 2e-16 ***
+                      age          7.696e-02  7.265e-03  10.594  < 2e-16 ***
+                      age2        -1.009e-03  8.341e-05 -12.101  < 2e-16 ***
+                      sex         -2.451e-01  1.046e-01  -2.342   0.0192 *  
+                      sex_age      1.626e-02  2.515e-03   6.467 1.03e-10 ***
+                      ---
+                      Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+                      
+                      Residual standard error: 1.933 on 13229 degrees of freedom
+                      Multiple R-squared:  0.02239,	Adjusted R-squared:  0.0221 
+                      F-statistic: 75.75 on 4 and 13229 DF,  p-value: < 2.2e-16"
+
+
 especificacion4 <-lm(log_ingtot~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+sizeFirm+oficio+
                        hoursWorkActualSecondJob+hoursWorkUsual+informal+relab,data=train)
-test$especificacion4<-predict(especificacion4,newdata = test)
-with(test,mean((log_ingtot-especificacion4)^2)) #MSE 1.119276
+                summary(especificacion4)
+                            "Residuals:
+                             Min       1Q   Median       3Q      Max 
+                        -14.2106  -0.2801   0.0382   0.3864  12.1980 
+                        
+                        Coefficients:
+                                                   Estimate Std. Error  t value Pr(>|t|)    
+                        (Intercept)               1.271e+01  3.385e-01   37.542  < 2e-16 ***
+                        sex                       1.538e-01  2.408e-02    6.388 1.73e-10 ***
+                        maxEducLevel3             1.947e-01  1.240e-01    1.570 0.116460    
+                        maxEducLevel4             2.045e-01  1.199e-01    1.707 0.087914 .  
+                        maxEducLevel5             2.546e-01  1.195e-01    2.129 0.033248 *  
+                        maxEducLevel6             3.145e-01  1.183e-01    2.658 0.007866 ** 
+                        maxEducLevel7             4.391e-01  1.204e-01    3.646 0.000268 ***
+                        age                       2.708e-02  4.543e-03    5.961 2.57e-09 ***
+                        age2                     -2.259e-04  5.305e-05   -4.258 2.08e-05 *** "
+                test$especificacion4<-predict(especificacion4,newdata = test)
+                with(test,mean((log_ingtot-especificacion4)^2)) #MSE 1.119276
+                
+especificacion5 <-lm(log_ingtot~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+sizeFirm+oficio+
+                       hoursWorkActualSecondJob+hoursWorkUsual+informal+relab+sex:maxEducLevel
+                     +sex:informal+ sex:oficio+sex:age,data=train)
+                summary(especificacion5)
+                  "Residuals:
+                     Min       1Q   Median       3Q      Max 
+                -14.2322  -0.2802   0.0299   0.3875  12.2619 
+                
+                Coefficients: (8 not defined because of singularities)
+                                           Estimate Std. Error  t value Pr(>|t|)    
+                (Intercept)               1.295e+01  5.068e-01   25.563  < 2e-16 ***
+                sex                      -3.990e-01  6.518e-01   -0.612 0.540446    
+                maxEducLevel3             1.989e-01  1.710e-01    1.164 0.244561    
+                maxEducLevel4             1.481e-01  1.629e-01    0.910 0.363008    
+                maxEducLevel5             1.496e-01  1.628e-01    0.919 0.358136    
+                maxEducLevel6             2.318e-01  1.605e-01    1.445 0.148595    
+                maxEducLevel7             2.866e-01  1.633e-01    1.755 0.079271 .  
+                age                       2.807e-02  4.594e-03    6.111 1.02e-09 ***
+                age2                     -2.322e-04  5.324e-05   -4.361 1.30e-05 ***"
 
-#5
-especificacion5 <-lm(log_ingtot~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+
-                       sizeFirm+oficio+hoursWorkActualSecondJob+hoursWorkUsual+
-                       informal+relab+ sex:maxEducLevel+ sex:age+sex:oficio+sex:informal,data=train)
-test$especificacion5<-predict(especificacion5,newdata = test)
-with(test,mean((log_ingtot-especificacion5)^2))#MSE 1.12227
+                test$especificacion5<-predict(especificacion5,newdata = test)
+                with(test,mean((log_ingtot-especificacion5)^2)) #MSE 1.12227
+#  prediction from a rank-deficient fit may be misleading Sale este warming el cual aparece por 
+#colinealidad entre las variables o porque la cantidad de variables supera el número de observaciones
 
-#6
-especificacion6 <-lm(log_ingtot~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+
-                       sizeFirm+oficio+hoursWorkActualSecondJob+informal+
-                       relab+ sex:maxEducLevel +sex:age+sex:informal+
-                       hoursWorkUsual: maxEducLevel+ hoursWorkUsual,data=train)
-test$especificacion6<-predict(especificacion6,newdata = test)
-with(test,mean((log_ingtot-especificacion6)^2)) #MSE 1.117673
-
-#7
-especificacion7 <-lm(log_ingtot~sex+age+age2+estrato1+regSalud+cotPension+
-                       sizeFirm+oficio+hoursWorkActualSecondJob+hoursWorkUsual+informal+
-                       relab+sex:oficio+sex:regSalud+sex:informal+ sex:oficio+
-                       age:sex+hoursWorkUsual:maxEducLevel+hoursWorkUsual:relab+
-                       hoursWorkUsual:informal+regSalud:cotPension+oficio:relab,data=train)
-
-test$especificacion7<-predict(especificacion7,newdata = test)
-with(test,mean((log_ingtot-especificacion7)^2)) #MSE 1.175428
-
-#8
-especificacion8 <-lm(log_ingtot~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+
-                       sizeFirm+oficio+hoursWorkActualSecondJob+hoursWorkUsual+informal+
-                       relab + hoursWorkActualSecondJob:maxEducLevel+
-                       hoursWorkActualSecondJob:informal+ hoursWorkActualSecondJob:oficio+
-                       hoursWorkActualSecondJob:relab,data=train)
-
-test$especificacion8<-predict(especificacion8,newdata = test)
-with(test,mean((log_ingtot-especificacion8)^2)) #MSE 2.942313
-
-#9
-especificacion9 <-lm(log_ingtot~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+
-                       sizeFirm+oficio+hoursWorkActualSecondJob+informal+
-                       relab+ poly(maxEducLevel,2) + hoursWorkActualSecondJob:maxEducLevel+
-                       hoursWorkActualSecondJob:informal+ hoursWorkActualSecondJob:oficio+
-                       hoursWorkActualSecondJob:relab + poly(hoursWorkUsual,2) + 
-                       cotPension:regSalud,data=train)
-test$especificacion9<-predict(especificacion9,newdata = test)
-with(test,mean((log_ingtot-especificacion9)^2)) #MSE 2.921648 
+especificacion6<-lm(log_ingtot~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+sizeFirm+oficio+
+                     hoursWorkActualSecondJob+hoursWorkUsual+informal+relab+sex:maxEducLevel
+                   +sex:informal+ sex:oficio+sex:age+hoursWorkUsual:maxEducLevel+hoursWorkUsual:informal+
+                     hoursWorkUsual:relab+poly(hoursWorkUsual,2),data=train)
+                    
+                  summary(especificacion6)
+                        "Residuals:
+                       Min       1Q   Median       3Q      Max 
+                  -14.2939  -0.2788   0.0215   0.3700  12.0824 
+                  
+                  Coefficients: (10 not defined because of singularities)
+                                                 Estimate Std. Error t value Pr(>|t|)    
+                  (Intercept)                   1.294e+01  5.651e-01  22.892  < 2e-16 ***
+                  sex                          -3.859e-01  6.519e-01  -0.592 0.553889    
+                  maxEducLevel3                 3.165e-01  3.208e-01   0.986 0.323928    
+                  maxEducLevel4                 3.372e-01  3.097e-01   1.089 0.276264    
+                  maxEducLevel5                 3.103e-01  3.075e-01   1.009 0.312863    
+                  maxEducLevel6                 3.594e-01  3.024e-01   1.188 0.234731    
+                  maxEducLevel7                 5.134e-01  3.043e-01   1.687 0.091636 .  
+                  age                           2.442e-02  4.568e-03   5.346 9.15e-08 ***
+                  age2                         -1.831e-04  5.299e-05  -3.455 0.000553 ***
+                  estrato12                    -1.186e-02  3.405e-02  -0.348 0.727622    
+                  estrato13                     8.110e-02  3.633e-02   2.232 0.025614 *  
+                  estrato14                     5.152e-01  5.405e-02   9.532  < 2e-16 ***
+                  estrato15                     8.009e-01  8.128e-02   9.853  < 2e-16 ***
+                  estrato16                     1.127e+00  7.488e-02  15.046  < 2e-16 ***
+                  regSalud1                     2.093e-01  4.194e-02   4.990 6.12e-07 ***
+                  regSalud2                     3.360e-01  8.798e-02   3.820 0.000134 ***
+                  regSalud3                     1.108e-01  4.368e-02   2.535 0.011245 * "
+                test$especificacion6<-predict(especificacion6,newdata = test)
+                with(test,mean((log_ingtot-especificacion6)^2)) #MSE  1.112015
 
 
 
-#Obs que el modelo no predijo
+especificacion7<-lm(log_ingtot~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+sizeFirm+oficio+
+                     hoursWorkActualSecondJob+hoursWorkUsual+informal+relab+sex:maxEducLevel
+                   +sex:informal+ sex:oficio+sex:age+hoursWorkUsual:maxEducLevel+hoursWorkUsual:informal+
+                     hoursWorkUsual:relab+poly(hoursWorkUsual,2)+cotPension:regSalud,data=train)
+summary(especificacion7)
 
-especificacion6_test<-lm(log_ingtot~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+
-                              sizeFirm+oficio+hoursWorkActualSecondJob+informal+
-                              relab+ sex:maxEducLevel +sex:age+sex:informal+hoursWorkUsual+
-                              hoursWorkUsual: maxEducLevel,data=test)
-predichos_modelo6<- predict(especificacion6_test)
-plot1<- ggplot(data=test, aes(log_ingtot, predichos_modelo6))+
-  geom_point()+geom_smooth(color="firebrick")+
-  theme_bw()
-  
+                test$especificacion7<-predict(especificacion7,newdata = test)
+                with(test,mean((log_ingtot-especificacion7)^2)) #MSE 2.945502
 
-#Influencia estadística
 
-hj<-lm.influence(especificacion6_test,do.coef=TRUE)
+specification8<-lm(log_ingtot~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+sizeFirm+oficio+
+                     hoursWorkActualSecondJob+hoursWorkUsual+informal+relab+sex:maxEducLevel
+                   +sex:informal+ sex:oficio+sex:age+hoursWorkUsual:maxEducLevel+hoursWorkUsual:informal+
+                     hoursWorkUsual:relab+poly(hoursWorkUsual,2)+cotPension:regSalud+
+                     cotPension:maxEducLevel+ regSalud:oficio,data=train)
 
-summary(lm.SR <- lm(log_ingtot~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+
-                      sizeFirm+oficio+hoursWorkActualSecondJob+informal+
-                      relab+ sex:maxEducLevel +sex:age+sex:informal+hoursWorkUsual+
-                      hoursWorkUsual: maxEducLevel,
-                   data = test),
-       corr = TRUE)
-utils::str(lmI <- lm.influence(lm.SR))
+                test$especificacion8<-predict(especificacion8,newdata = test)
+                with(test,mean((log_ingtot-especificacion8)^2)) #MSE 2.945502
 
-hist(lmI)
-hj
+specification9<-lm(log_ingtot~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+sizeFirm+oficio+
+                     hoursWorkActualSecondJob:hoursWorkUsual+hoursWorkActualSecondJob:+hoursWorkUsual+
+                     informal+relab+sex:maxEducLevel+sex:informal+ estrato1:relab+ sex:oficio+ 
+                     cotPension:maxEducLevel+ regSalud:oficio+ sex:age+hoursWorkUsual:maxEducLevel+
+                     oficio:relab+estrato1:maxEducLevel+poly(hoursworkUsual,2):informal+
+                     hourworkUsual:relab+poly(hoursworkUsual,2)+cotPension:regSalud,data=train)
+                
+                test$especificacion9<-predict(especificacion9,newdata = test)
+                with(test,mean((log_ingtot-especificacion9)^2)) #MSE 2.945502
+
 #LOOV
-install.packages("caret")
-library(caret)
-model2 <- train(log_ingtot ~ age+age2+sex,
+ model2 <- train(log_ingtot ~ age+age2+sex,
                 # model to fit
                 data = base2,
                 trControl = trainControl(method = "cv", number = 5), method = "lm")
@@ -803,34 +877,7 @@ model2
 
 
 
-# Fit the model at the mean 
-Modes <- function(x) {
-  ux <- unique(x)
-  tab <- tabulate(match(x, ux))
-  ux[tab == max(tab)]
-}
 
-mean_dat <- apply(select_if(dat, is.numeric), 2, mean)
-mean_dat <- data.frame(t(mean_dat))
-mode_dat <- apply(select_if(dat, is.factor), 2, Modes)
-mode_dat <- data.frame(t(mode_dat))
-mean_obs <- cbind(mode_dat, mean_dat)
-mean_obs2 <- mean_obs[rep(1, 40),]
-mean_obs2$temp <- seq(-5, 35, length = 40)
-mean_obs2$y_hat <- predict(mod, mean_obs2)
-
-ggplot(dat, aes(y = y, x = temp)) +
-  geom_point() +
-  geom_line(data = mean_obs2, aes(x = temp, y = y_hat, 
-                                  color = "with controls"), size = 1) +
-  stat_smooth(formula = 'y ~ x', method = lm, se = FALSE, 
-              aes(color = "without controls"), 
-              size = 1) +
-  theme_bw() +
-  labs(x = "Temperature in Celsius", 
-       y = "Number of bicycles rented",
-       title = "Predicted values with changes in temperature") +
-  scale_color_manual(name = "Model", values = c("red", "blue")
 
 
 
@@ -844,6 +891,9 @@ ggplot(dat, aes(y = y, x = temp)) +
 #como exportar
 #varianza
 
-
-
+#female_educ female_ocu female_age female_oficio female_informal con chorrero
+#educ^2 educ_estrato
+# hrstrabajo_educ  hrstrabajo_informal hrstrabajo_oficio hrstrabajo_relab
+#hrstrabajo^2 cotpension_regsalud
+#poly2 (educ_age, regsalud_pension)
 
