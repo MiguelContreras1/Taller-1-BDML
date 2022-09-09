@@ -131,9 +131,21 @@ library(matrixStats)
     Grafico_dmedias <- boxplot(base2$ingtot ~ base2$sex, col= "gray", xlab ="sexo", ylab = "ingreso total")
     stargazer(type="text", title ="difmean gen", TRUE) #exportarlo 
     #histograma ingreso
-    gp <-  ggplot() + geom_histogram(data = base2,aes(x=ingtot));gp
+    gp <-  ggplot() + geom_histogram(data = base,aes(x=ingtot));gp
+    
     #Scatter ingreso-edad
-    gp2<- ggplot()+geom_point(data=base2, aes(y=ingtot, x=age));gp2
+    gp2<- ggplot()+geom_point(data=base2, aes(y=ingtot, x=age))+theme_bw()+
+      labs(x = "Edad", 
+           y = "Ingreso total",
+           title = "Nube de puntos ingreso por edad", size=0,5) +
+      scale_color_manual(name = "Model", values = c("red", "blue")) ;gp2
+    
+    gp22<- ggplot()+geom_point(data=base2, aes(y=ingtot, x=age))+theme_bw()+
+      labs(x = "Edad", 
+           y = "Ingreso total",
+           title = "Nube de puntos ingreso por edad", size=0,5) +
+      scale_color_manual(name = "Model", values = c("red", "blue"))+facet_grid(sex~.) ;gp2
+    
     #histograma edad
     gp3 <- ggplot() + geom_histogram(data = base2, aes(x=age));gp3
     #scatter ingreso-sex
@@ -402,7 +414,7 @@ library(matrixStats)
     #7
     especificacion7 <-lm(log_ingtot~sex+age+age2+estrato1+regSalud+cotPension+
                            sizeFirm+oficio+hoursWorkActualSecondJob+informal+
-                           relab+sex:oficio+sex:regSalud+sex:informal+ sex:oficio+
+                           relab+sex:oficio+sex:regSalud+sex:informal+
                            age:sex+hoursWorkUsual:maxEducLevel+hoursWorkUsual:relab+
                            hoursWorkUsual:informal+regSalud:cotPension+oficio:relab+poly(hoursWorkUsual,2),data=train)
     
@@ -422,11 +434,6 @@ library(matrixStats)
     #MSE especificación 8
     with(test,mean((log_ingtot-especificacion8)^2)) #MSE 3.1105
     
-    
-    
-    
-    
-    
     #9
     especificacion9 <-lm(log_ingtot~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+
                            sizeFirm+oficio+hoursWorkActualSecondJob+hoursWorkUsual+informal+
@@ -436,9 +443,10 @@ library(matrixStats)
     
     test$especificacion9<-predict(especificacion9,newdata = test)
     #MSE especificación 8
-    with(test,mean((log_ingtot-especificacion9)^2)) #MSE 3.56
+    with(test,mean((log_ingtot-especificacion9)^2)) #MSE 3.561439
     
-
+    #resultados 
+    stargazer(especificacion6, especificacion5)
 
     #Obs que el modelo no predijo
     #modelo ganador estimado en test
@@ -452,7 +460,13 @@ library(matrixStats)
     
     plot1<- ggplot(data=test, aes(log_ingtot, predichos_modelo6))+
       geom_point()+geom_smooth(color="firebrick")+
-      theme_bw()
+      theme_bw() +
+      labs(x = "logaritmo del ingreso", 
+           y = "Ingreso predicho mejor modelo",
+           title = "Ajuste del modelo con menor MSE", size=0,5) +
+      scale_color_manual(name = "Model", values = c("red", "blue"))
+    
+    
 
     #Influencia estadística
     lm.inf <- lm.influence(especificacion6_test)
@@ -465,85 +479,53 @@ library(matrixStats)
 
     #gráfico de distribucion de influencia 
     test<- cbind(test, influecia)
-    plot2<- ggplot(data=test, aes(log_ingtot, influecia))+
-      geom_point()+
-      theme_bw()
+    influencia<- ggplot(data=test, aes(influecia), bins=30)+
+      geom_histogram()+theme_bw()+
+      labs(x = "Influencia", 
+           y = "Acumulación",
+           title = "Distribución de Influencia estadística", size=0,5) +
+      scale_color_manual(name = "Model", values = c("red", "blue"))
+    
+    influencia2<- ggplot(data=test, aes(influecia, log_ingtot), bins=30)+
+      geom_point()+theme_bw()+
+      labs(x = "log_intot", 
+           y = "influencia",
+           title = "Influencia estadística por el logaritmo del ingreso", size=0,5) +
+      scale_color_manual(name = "Model", values = c("red", "blue"))
+    
 
-    weights <- data.frame(predict(especificacion6_test, type = 'terms'))
-    boxplot(weights$maxEducLevel)
-    # Create reference dataset
-    get_reference_dataset = function(dat){
-      df2 = lapply(dat, function(feature){
-        if(class(feature) == 'factor'){
-          factor(levels(feature)[1], levels = levels(feature))
-        } else {
-          0
-        }
-      })
-      data.frame(df2)
-    }
-    reference_dataset <- get_reference_dataset(test)
-    
-    reference_X = predict(especificacion6_test, newdata = reference_dataset, 
-                          type = 'terms')
-    
-    effect = data.frame(t(apply(weights, 1, function(x){
-      x - reference_X[1,names(weights)]})))
-    effect_long <- tidyr::gather(effect)
-    
-    ggplot(effect_long) +
-      geom_hline(yintercept = 0, linetype = 4) +
-      geom_boxplot(aes(x = key, y = value, group = key)) +
-      coord_flip() +
-      scale_y_continuous('Feature effect') +
-      scale_x_discrete('') +
-      labs(title = "Distribution of effects across the data per feature.") + 
-      theme_bw()
-    
-    plot_summs(mod, colors = "black", robust = TRUE)
 
     #LOOV
-    CV_especificacion6 <- train(log_ingtot ~ age+age2+sex,
-                    # model to fit
-                    data = base2,
+    CV_especificacion6 <- train(log_ingtot ~ sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+
+                                  sizeFirm+oficio+hoursWorkActualSecondJob+informal+
+                                  relab+ sex:maxEducLevel +sex:age+sex:informal+
+                                  hoursWorkUsual: maxEducLevel+ hoursWorkUsual,
+                    data = test,
                     trControl = trainControl(method = "cv", number = 5), method = "lm")
-
-    CV_especificacion7<- train(log_ingtot ~ age+age2+sex,
-                                # model to fit
+    
+    CV_especificacion6_2 <- train(log_ingtot ~ sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+
+                                  sizeFirm+oficio+hoursWorkActualSecondJob+informal+
+                                  relab+ sex:maxEducLevel +sex:age+sex:informal+
+                                  hoursWorkUsual: maxEducLevel+ hoursWorkUsual,
+                                  data = test,
+                                trControl = trainControl(method = "cv", number = 10), method = "lm")
+    
+    
+    
+    CV_especificacion5<- train(log_ingtot ~ sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+
+                                 sizeFirm+oficio+hoursWorkActualSecondJob+hoursWorkUsual+
+                                 informal+relab,
                                 data = base2,
                                 trControl = trainControl(method = "cv", number = 5), method = "lm")
     
-    CV_especificacion6
-    "Linear Regression 
-            
-            16542 samples
-                3 predictor
-            
-            No pre-processing
-            Resampling: Cross-Validated (5 fold) 
-            Summary of sample sizes: 13234, 13233, 13234, 13234, 13233 
-            Resampling results:
-            
-              RMSE      Rsquared   MAE      
-              1.936076  0.0201174  0.8491334
-            
-            Tuning parameter 'intercept' was held constant at a value of TRUE"
+
+
+    CV_especificacion5_2<- train(log_ingtot ~ sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+
+                                 sizeFirm+oficio+hoursWorkActualSecondJob+hoursWorkUsual+
+                                 informal+relab+ sex:maxEducLevel+ sex:age+sex:oficio+sex:informal,
+                               data = base2,
+                               trControl = trainControl(method = "cv", number = 5), method = "lm")
     
-
-
-# Fit the model at the mean 
-ggplot(dat, aes(y = base2$log_ingtot, x = age)) +
-  geom_point() +
-  geom_line(data = mean_obs2, aes(x = temp, y = y_hat, 
-                                  color = "with controls"), size = 1) +
-  stat_smooth(formula = 'y ~ x+ x2', method = lm, se = FALSE, 
-              aes(color = "without controls"), 
-              size = 1) +
-  theme_bw() +
-  labs(x = "Edad", 
-       y = "Logaritmo del ingreso total",
-       title = "Valores predichos de la semielasticidad del ingreso respecto a la edad") +
-  scale_color_manual(name = "Model", values = c("red", "blue"))
 
 
 
