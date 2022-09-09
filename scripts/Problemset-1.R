@@ -10,6 +10,7 @@ install.packages("stargazer")
 install.packages("tidyverse")
 install.packages("boot")
 install.packages("caret")
+install.packages("matrixStats")
 
 library(caret)
 library(dplyr)
@@ -21,11 +22,12 @@ library(tibble)
 library(dplyr)
 library(pacman)
 library(rvest)
+library(matrixStats)
 
 #IMPORTAR DATOS
     #Lectura de URL
     url <- "https://ignaciomsarmiento.github.io/GEIH2018_sample/pages/geih_page_1.html URL chunk 1"
-    browseURL(url)
+   
     #Lectura de cada chunck
     url_base <- paste0("https://ignaciomsarmiento.github.io/GEIH2018_sample/pages/geih_page_", 1:10, ".html")
 
@@ -38,7 +40,7 @@ library(rvest)
       temp <- as.data.frame(temp[[1]])
       df <- rbind(df, temp)
     }
-    head(df)
+     
     
 #LIMPIEZA DE LA BASE
     #Restringirla solo para mayores de 18 años y que sean empleados 
@@ -109,15 +111,15 @@ library(rvest)
     
          #varianzas variables continuas
     base2 %>% var()
-    var(base2$ingtot) "7.158984e+12"
-    var(base2$age) " 181.7871"
-    var(base2$hoursWorkActualSecondJob)"79.56467"
-    var(base2$hoursWorkUsual)"241.5766"
-    var(base2$sex)"0.249116"
+    var(base2$ingtot) # "7.158984e+12"
+    var(base2$age) #" 181.7871"
+    var(base2$hoursWorkActualSecondJob)#"79.56467"
+    var(base2$hoursWorkUsual)#"241.5766"
+    var(base2$sex)#"0.249116"
 
           #diferencia de medias ingreso entre edades <57> y sexo
     d_medias_sex<- t.test (base2$ingtot ~ base2$sex ) ;d_medias_sex
-    d_medias_age<- t.test (base2$ingtot ~ base2$age ) ;d_medias_age
+    
     
           #Gráficos de estadísticas desciptivas
     #dif medias
@@ -205,10 +207,10 @@ library(rvest)
     #Hallar peak age 
     peak_y_predicho=(which.max(base2$y_predicho)) #2161715
     peak_age=(base2$age[113])#57
-    base2[113,] "college maxEducLevel age estrato1 sex regSalud cotPension ingtot sizeFirm microEmpresa oficio
-                 1            6  57        2   0        1          1 838333        5            0     55
-              hoursWorkActualSecondJob hoursWorkUsual informal relab age2 y_predicho IC_alto IC_bajo
-                             NA             48          0        1   3249    2161715 2260888 2062541"
+    base2[113,] #"college maxEducLevel age estrato1 sex regSalud cotPension ingtot sizeFirm microEmpresa oficio
+                # 1            6  57        2   0        1          1 838333        5            0     55
+              #hoursWorkActualSecondJob hoursWorkUsual informal relab age2 y_predicho IC_alto IC_bajo
+                        #     NA             48          0        1   3249    2161715 2260888 2062541"
 
 #TERCER PUNTO
 
@@ -227,55 +229,16 @@ library(rvest)
     lm_summary3=as.data.frame(summary(regresion3)$coefficients)
     y_predicho3<- predict(regresion3)
     base2<- cbind(base2, y_predicho3)
-    sqrt(var(y_predicho3))#0.2793598
-    IC_bajo3= base2$y_predicho3-1.96*0.2793598
-    IC_alto3= base2$y_predicho3+1.96*0.2793598
-    base2<- cbind(base2, IC_alto3)
-    base2<- cbind(base2, IC_bajo3)
-
-    #Gráfico con modelo y=age+age2+sex divido por género por CI normal
-    ggplot(base2, aes(age, y_predicho3)) + geom_point() +                                
-      geom_line(color = "dark green", size = 2) +
-      geom_ribbon(aes(ymin=IC_bajo3, ymax=IC_alto3), alpha=0.1, fill = "green", 
-                  color = "black", linetype = "dotted")+facet_grid(sex~.)
-      #peak age hombres 
-      base_hombres2= subset(base2, base$sex==1)
-      peak_hombre2<-(which.max(base_hombres$y_predicho3))#16
-      peak_age_hombre2=(base_hombres$age[16])#43
-      as.integer(max(base_hombres$ingtot))#85.833.333
-      base_hombres2[16,] 
-      
-      #peak age mujeres 
-      base_mujeres2= subset(base2, base$sex==0)
-      peak_mujeres2<-(which.max(base_mujeres$y_predicho3))#23
-      peak_age_mujer2=(base_mujeres$age[23])#43
-      as.integer(max(base_mujeres$ingtot))#40.000.000
-      base_mujeres2[23,]"    college maxEducLevel age estrato1 sex regSalud cotPension  ingtot sizeFirm
-             0            7  43        3   0        2          1 3150000        5
-           microEmpresa oficio hoursWorkActualSecondJob hoursWorkUsual informal relab age2
-                0     13                       NA             30        0     2 1849
-          y_predicho IC_alto IC_bajo log_ingtot y_predicho2 holdout IC_alto2 IC_bajo2
-           2004672 2074797 1934547   14.96291    13.54926   FALSE 14.07188 13.40277
-          y_predicho3 IC_alto3  IC_bajo3
-          13.73732     14.28487 13.18978"
-      
+   
+    
       #peak age hombres con modelo de age 
       base_hombres= subset(base2, base$sex==1)
-      peak_hombre<-(which.max(base_hombres$y_predicho))#141
-      peak_age_hombre=(base_hombres$age[141])#57
-      as.integer(max(base_hombres$ingtot))#85.833.333
+      
       #peak age mujeres con modelo age 
       base_mujeres= subset(base2, base$sex==0)
-      peak_mujeres<-(which.max(base_mujeres$y_predicho))#57
-      peak_age_mujer=(base_mujeres$age[57])#57
-      as.integer(max(base_mujeres$ingtot))#40.000.000
+     
       
-      #Gráfico con modelo y=age+age2+sex divido por género por CI normal
-      ggplot(base2, aes(age, y_predicho)) + geom_point() +                                
-        geom_line(color = "dark green", size = 2) +
-        geom_ribbon(aes(ymin=IC_bajo3, ymax=IC_alto3), alpha=0.1, fill = "green", 
-                    color = "black", linetype = "dotted")+facet_grid(sex~.)
-      
+     
       #Errores bootstrap modelo y~age+age2+sex
       eta_mod11<-rep(0,R)
       eta_mod22<-rep(0,R)
@@ -326,6 +289,11 @@ library(rvest)
       peak_age_mujer2=(base_mujeres$age[23])#43
       as.integer(max(base_mujeres$ingtot))#40.000.000
 
+      #Modelo con interaccion age-sex para analisis de pendiente
+      regresion4<- lm(log_ingtot~sex+age+age2+sex:age, data=base2) 
+      summary(regresionaux)
+      
+      stargazer(regresion4,regresion3, regresion2, regresion1,type="text")
 
       #regresion condicional
       #denominar dummies como factores
@@ -338,12 +306,14 @@ library(rvest)
       base2$informal<-as.factor(base2$informal)
       base2$relab<-as.factor(base2$relab)
       
+      
+      
       #estimación modelo condicional
-      regresion4<- lm(log_ingtot~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension
+      regresion5<- lm(log_ingtot~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension
                       +sizeFirm+oficio+hoursWorkActualSecondJob+hoursWorkUsual+informal
                       +relab, data=base2)
-      lm_summary4=as.data.frame(summary(regresion4$coefficients))
-      stargazer(regresion4,regresion3, regresion2, regresion1,type="text")
+      lm_summary5=as.data.frame(summary(regresion5$coefficients))
+      
       
       #FWL
       base2<-base2 %>% mutate(res_y_a=lm(log_ingtot~maxEducLevel+age+age2+estrato1+regSalud
@@ -354,7 +324,7 @@ library(rvest)
                                          +hoursWorkUsual+informal+relab,base2)$residuals, #Residuals con sexo
       )
       
-      regresion5<-lm(res_y_a~res_s_a-1,base2)
+      regresion6<-lm(res_y_a~res_s_a-1,base2)
       
       #boostrap FWL
       
@@ -363,6 +333,9 @@ library(rvest)
         coef(lm(res_y_a~res_s_a-1,base2, subset = i))
       }
       replicas<- boot(data = base2, statistic = eta.fn, R = 1000)
+      
+      
+      stargazer(rregresion3, regresion5, regresion6,type="text")
 
 #PUNTO 4 
     #división de muestra
