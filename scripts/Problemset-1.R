@@ -86,6 +86,9 @@ library(matrixStats)
 
     #Análisis descriptivo 
         #CRUCE DE VARIABLES 
+    
+    aggregate(base2$age,by=list(base2$sex),mean)
+    
     table(base2$regSalud, base2$maxEducLevel)
     table(base2$age, base2$regSalud)
     table(base2$regSalud, base2$sex)
@@ -101,6 +104,8 @@ library(matrixStats)
     output_ad <-as.data.frame(output) #convertir summary en tabla
     write.table(x = output_ad, file = "summary.xlsx", sep = " ", 
                 row.names = FALSE, col.names = TRUE)
+    
+    ing <- base2 %>%  summarize(mean(base$ingtot,na.rm = T));ing
         # Media de ingresos por grupos
     # por sexo
     a <- base2 %>% group_by(sex) %>% summarize(mean(base$ingtot,na.rm = T));a
@@ -339,7 +344,7 @@ library(matrixStats)
 
 #PUNTO 4 
     #división de muestra
-    set.seed(12345) #sets a seed
+      set.seed(12345) #sets a seed
     base2 <- base2 %>%
       mutate(holdout= as.logical(1:nrow(base2) %in%
                                    sample(nrow(base2), nrow(base2)*.2))
@@ -396,36 +401,42 @@ library(matrixStats)
     
     #7
     especificacion7 <-lm(log_ingtot~sex+age+age2+estrato1+regSalud+cotPension+
-                           sizeFirm+oficio+hoursWorkActualSecondJob+hoursWorkUsual+informal+
+                           sizeFirm+oficio+hoursWorkActualSecondJob+informal+
                            relab+sex:oficio+sex:regSalud+sex:informal+ sex:oficio+
                            age:sex+hoursWorkUsual:maxEducLevel+hoursWorkUsual:relab+
-                           hoursWorkUsual:informal+regSalud:cotPension+oficio:relab,data=train)
+                           hoursWorkUsual:informal+regSalud:cotPension+oficio:relab+poly(hoursWorkUsual,2),data=train)
     
     test$especificacion7<-predict(especificacion7,newdata = test)
     #MSE especificación 7
-    with(test,mean((log_ingtot-especificacion7)^2)) #MSE 1.175428
+    with(test,mean((log_ingtot-especificacion7)^2)) #MSE 1.172084
     
     #8
+    
     especificacion8 <-lm(log_ingtot~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+
-                           sizeFirm+oficio+hoursWorkActualSecondJob+hoursWorkUsual+informal+
+                           sizeFirm+oficio+hoursWorkActualSecondJob+informal+
                            relab + hoursWorkActualSecondJob:maxEducLevel+
                            hoursWorkActualSecondJob:informal+ hoursWorkActualSecondJob:oficio+
-                           hoursWorkActualSecondJob:relab,data=train)
-    
+                           hoursWorkActualSecondJob:relab + poly(hoursWorkActualSecondJob,3):oficio+poly(hoursWorkUsual,3) + 
+                           cotPension:regSalud + poly(hoursWorkActualSecondJob,3):poly(age,2),data=train)
     test$especificacion8<-predict(especificacion8,newdata = test)
     #MSE especificación 8
-    with(test,mean((log_ingtot-especificacion8)^2)) #MSE 2.942313
+    with(test,mean((log_ingtot-especificacion8)^2)) #MSE 3.1105
+    
+    
+    
+    
+    
     
     #9
     especificacion9 <-lm(log_ingtot~sex+maxEducLevel+age+age2+estrato1+regSalud+cotPension+
-                           sizeFirm+oficio+hoursWorkActualSecondJob+informal+
-                           relab+ poly(maxEducLevel,2) + hoursWorkActualSecondJob:maxEducLevel+
+                           sizeFirm+oficio+hoursWorkActualSecondJob+hoursWorkUsual+informal+
+                           relab + hoursWorkActualSecondJob:maxEducLevel+
                            hoursWorkActualSecondJob:informal+ hoursWorkActualSecondJob:oficio+
-                           hoursWorkActualSecondJob:relab + poly(hoursWorkUsual,2) + 
-                           cotPension:regSalud,data=train)
+                           hoursWorkActualSecondJob+poly(hoursWorkActualSecondJob,3):oficio+poly(hoursWorkUsual,3) :relab,data=train)
+    
     test$especificacion9<-predict(especificacion9,newdata = test)
-    #MSE especificación 9
-    with(test,mean((log_ingtot-especificacion9)^2)) #MSE 2.921648 
+    #MSE especificación 8
+    with(test,mean((log_ingtot-especificacion9)^2)) #MSE 3.56
     
 
 
