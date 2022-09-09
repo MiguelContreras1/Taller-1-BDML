@@ -485,7 +485,38 @@ library(rvest)
       geom_point()+
       theme_bw()
 
-
+    weights <- data.frame(predict(especificacion6_test, type = 'terms'))
+    boxplot(weights$maxEducLevel)
+    # Create reference dataset
+    get_reference_dataset = function(dat){
+      df2 = lapply(dat, function(feature){
+        if(class(feature) == 'factor'){
+          factor(levels(feature)[1], levels = levels(feature))
+        } else {
+          0
+        }
+      })
+      data.frame(df2)
+    }
+    reference_dataset <- get_reference_dataset(test)
+    
+    reference_X = predict(especificacion6_test, newdata = reference_dataset, 
+                          type = 'terms')
+    
+    effect = data.frame(t(apply(weights, 1, function(x){
+      x - reference_X[1,names(weights)]})))
+    effect_long <- tidyr::gather(effect)
+    
+    ggplot(effect_long) +
+      geom_hline(yintercept = 0, linetype = 4) +
+      geom_boxplot(aes(x = key, y = value, group = key)) +
+      coord_flip() +
+      scale_y_continuous('Feature effect') +
+      scale_x_discrete('') +
+      labs(title = "Distribution of effects across the data per feature.") + 
+      theme_bw()
+    
+    plot_summs(mod, colors = "black", robust = TRUE)
 
     #LOOV
     CV_especificacion6 <- train(log_ingtot ~ age+age2+sex,
@@ -498,23 +529,22 @@ library(rvest)
                                 data = base2,
                                 trControl = trainControl(method = "cv", number = 5), method = "lm")
     
-    # fit a simple regression
-model2
-"Linear Regression 
-        
-        16542 samples
-            3 predictor
-        
-        No pre-processing
-        Resampling: Cross-Validated (5 fold) 
-        Summary of sample sizes: 13234, 13233, 13234, 13234, 13233 
-        Resampling results:
-        
-          RMSE      Rsquared   MAE      
-          1.936076  0.0201174  0.8491334
-        
-        Tuning parameter 'intercept' was held constant at a value of TRUE"
-
+    CV_especificacion6
+    "Linear Regression 
+            
+            16542 samples
+                3 predictor
+            
+            No pre-processing
+            Resampling: Cross-Validated (5 fold) 
+            Summary of sample sizes: 13234, 13233, 13234, 13234, 13233 
+            Resampling results:
+            
+              RMSE      Rsquared   MAE      
+              1.936076  0.0201174  0.8491334
+            
+            Tuning parameter 'intercept' was held constant at a value of TRUE"
+    
 
 
 # Fit the model at the mean 
@@ -533,11 +563,8 @@ ggplot(dat, aes(y = base2$log_ingtot, x = age)) +
 
 
 
-#Temas pendientes
 
-#como exportar
-#varianza
-
+    
 
 
 
