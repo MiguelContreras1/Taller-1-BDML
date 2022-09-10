@@ -1,22 +1,25 @@
-# TALLER 1
+# Problem set 1 
+#En este script usted encontrará los comando ejecutados para realizar el primer problem set del curso BD and ML for applied economics. 
+#Para que pueda replicar el ejercicio debe primero cargar las bases de datos disponibles en la url a través de un proceso de web scrapping y luego unirlas en un data frame. 
+#Seguido a esto cargue los paquetes y empiece la limpieza inicial de la base, limitando la base a la población de interes (población mayor de edad ocupada). Esto es lo que denominamos base2. 
+#Corra todos los códigos correspondientes al análisis descriptivo para responder a las preguntas 
 
 ## 1. Construir un modelo de ingresos individuales 
 
-
 #### a. Describa brevemente el conjunto de datos, el proceso de adquisición de los datos y si existen restricciones para acceder a estos datos o extraerlos.
-
 
 #### b. Limpieza y descripción de datos. Nos centraremos únicamente en las personas empleadas mayores de dieciocho (18) años. Restrinja los datos a estos individuos y realice un análisis descriptivo de las variables utilizadas en el conjunto de problemas. Tenga en cuenta que la GEIH: • Contiene múltiples medidas de ingresos. Elija las que mejor se adapten a su análisis. • Hay muchas observaciones con datos faltantes. Le dejo a usted encontrar una manera de manejar estos datos faltantes.
 #### Como mínimo, debe incluir una tabla de estadísticas descriptivas. Con análisis y la justificación de sus elecciones de datos.
 
 
-
+#Luego, desde la línea 171 hasta la 230 podrá correr el modelo correspondiente al punto: 
 ## 2. Estimar ingresos por edad para individuos de la muestra. 
- 
 
 #### • Discusión de la variable elegida como medida de los ingresos. • Interpretación de los coeficientes y su significado. • Discusión del ajuste de muestra del modelo • Gráfica del perfil estimado de ingresos por edad implícito en la ecuación anterior. • Discusión de la "edad máxima" con sus respectivos intervalos de confianza. (use bootstrap para construir los intervalos de confianza).
 
+#Tenga en cuenta que la mayoría del código se basa en la base denominada base2, la cual tiene el filtro de edad y de ocupación. Posteriormente necesitará las bases base_mujeres y base_hombres para análisis diferenciados. 
 
+#Para esta parte de la brecha de género corra desde la línea 232 hasta la 356
 
 ## 3. Brecha salarial de género.
 
@@ -32,7 +35,7 @@
 
 #### • Discusión de la variable elegida como medida de la Renta, si es igual o diferente al punto anterior. • Interpretación de los coeficientes "femeninos", una comparación entre los modelos y el ajuste en la muestra. • Discusión sobre las edades máximas implícitas y su similitud/diferencia estadística. • Discusión reflexiva sobre la brecha de ingresos incondicional y condicional, buscando responder si los cambios en el coeficiente son evidencia de un problema de selección, un "problema de discriminación" o ninguno de estos problemas.
 
-
+#Finalmente, para el modelo predictivo corra el script desde la línea 357 en adelante. Tenga en cuenta que las bases más importantes para este punto son la de entrenamiento denominada train y la de teteo denominada test. Con estas se hará la mayoría de ejercicios correspondientes a: 
 
 ## 4. Evaluar el poder predictivo de estas especificaciones.
 
